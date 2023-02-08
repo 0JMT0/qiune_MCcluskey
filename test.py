@@ -9,13 +9,13 @@ def count_ones(binary):
 
 def twoPowerORnot(b):
     twoPower = False
+
     for bit in range(digits):
         if b == (2**bit):
             twoPower = True
     return twoPower
 
 def finddigit(in_list):
-
     if type(in_list) == int:
         dig = -1
         m = in_list
@@ -33,6 +33,7 @@ def finddigit(in_list):
 def ones_sort(mtlist):
     sort = []
     sorted = []
+
     for s in range(digits+1): # s代表1的個數
         for dec in mtlist: # dec代表minterms的數值
             if count_ones(int_to_binary(dec)) == s:
@@ -55,14 +56,15 @@ def bubblesort(bubble):
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
-def comb(sd,mode):
-    #sd->sorted
+def comb(sd,mode):#sd->sorted
     PI = []
     all = []
     combine = []
     check1 = []
     check2 = []
     comb_yes = []
+    global alone_PI
+
     if mode == 0:
         for ones in range(len(sd)):
             if ones != len(sd)-1:
@@ -78,7 +80,9 @@ def comb(sd,mode):
                         if combined == 1:
                             comb_yes.append(cp1)
                             comb_yes.append(cp2)
-        PI = bubblesort(list(set(flatten(sd)) - set(comb_yes))) 
+        PI = bubblesort(list(set(flatten(sd)) - set(comb_yes)))
+        if PI != []:
+            alone_PI = True
     if mode == 1:
         for index1 in range(len(sd)):
             dontcare1 = []
@@ -120,7 +124,8 @@ def comb(sd,mode):
 def dontcareS(binary, bits):
     str1 = " "
     binaryS = [str(i) for i in binary]
-    if bits != 0:
+
+    if bits != -1:#表示不是帶有don't care位元
         if type(bits) == int:
             binaryS[abs(digits-bits-1)] = '-'
         else:
@@ -139,6 +144,7 @@ def Table(Dec_list,mode):
     Prime_Implicants = PrettyTable(["Combined(dec)","Combined(bin)"])
     Prime_Implicants.align["Combined(dec)"] = "l"
     repeated_ones = -1
+
     if mode == 0:
         for t in range(len(Dec_list)):
             bi = int_to_binary(Dec_list[t])
@@ -161,22 +167,24 @@ def Table(Dec_list,mode):
     if mode == 2:
         for t in range(len(Dec_list)):
             bi = int_to_binary((Dec_list[t])[0])
-            if Dec_list[t] == Dec_list[0]:#第一格都是單個數組成的PI
+            if Dec_list[t] == Dec_list[0] and alone_PI:#第一格且是單個數組成的PI
                 for l in range(len(Dec_list[0])):
                     bi = int_to_binary((Dec_list[0])[l])
-                    Prime_Implicants.add_row([(Dec_list[0])[l],dontcareS(bi,0)])
+                    Prime_Implicants.add_row([(Dec_list[0])[l],dontcareS(bi,-1)])#-1表示都是單個數組成的PI的模式
             else:
                 Prime_Implicants.add_row([(Dec_list[t])[:-1],dontcareS(bi,(Dec_list[t])[-1])])
 ################################################################[MAIN]
-mt_list = [20,28,38,39,52,60,102,103,127]
+mt_list = [0,1,2,5,6,8,9,10,16,40,60,100]
 #[0,5,7,8,16,26,29,30,31]
 #[20,28,38,39,52,60,102,103,127]
 #[6,9,13,18,19,25,27,29,41,45,57,61]
 #[0,1,2,5,6,8,9,10,16,40,60,100]
-global digits
 Combine = []
 PrimeI = []
 CandP = []#Combine和PrimeI的緩存
+global digits
+global alone_PI 
+alone_PI = False
 digits = finddigit(mt_list)
 sorteddec = ones_sort(mt_list)
 stages = len(sorteddec)
@@ -188,10 +196,13 @@ print(table)
 CandP = comb(sorteddec,0)
 Combine = CandP[0]
 PrimeI.append(CandP[1])
-print("STAGE {}".format(len(sorteddec)-stages+1))
-# print(Combine)
-Table(Combine,1)
-print(Stage)
+if Combine != []:
+    print("STAGE {}".format(len(sorteddec)-stages+1))
+    # print(Combine)
+    Table(Combine,1)
+    print(Stage)
+else:
+    alone_PI = True
 stages -= 1
 while stages > 0:
     CandP = comb(Combine,1)

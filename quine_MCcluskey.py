@@ -83,6 +83,7 @@ def comb(sd,mode):#sd->sorted
         PI = bubblesort(list(set(flatten(sd)) - set(comb_yes)))
         if PI != []:
             alone_PI = True
+
     if mode == 1:
         for index1 in range(len(sd)):
             dontcare1 = []
@@ -132,13 +133,15 @@ def dontcareS(binary, bits):
             for dc in range(len(bits)):
                 binaryS[abs(digits-bits[dc]-1)] = '-'
         return (str1.join(binaryS))
+
     if type(bits) == int:
         return (str1.join(binaryS))
 
-def Table(Dec_list,mode):
-    global table,Stage,Prime_Implicants
-    table = PrettyTable(["Ones","Minterms(dec)","Minterms(bin)"])
-    table.align["Minterms(dec)"] = "l"
+def table(Dec_list,mode):
+    global Table,Stage,Prime_Implicants,PI_bins,alone_PI
+    PI_bins = []
+    Table = PrettyTable(["Ones","Minterms(dec)","Minterms(bin)"])
+    Table.align["Minterms(dec)"] = "l"
     Stage = PrettyTable(["Ones","Combined(dec)","Combined(bin)"])
     Stage.align["Combined(dec)"] = "l"
     Prime_Implicants = PrettyTable(["Combined(dec)","Combined(bin)"])
@@ -150,10 +153,11 @@ def Table(Dec_list,mode):
             bi = int_to_binary(Dec_list[t])
             o = count_ones(bi)
             if o == repeated_ones:
-                table.add_row(["",Dec_list[t],bi])
+                Table.add_row(["",Dec_list[t],bi])
             else:
-                table.add_row([o,Dec_list[t],bi])
+                Table.add_row([o,Dec_list[t],bi])
             repeated_ones = o
+
     if mode == 1:
         Stage.clear
         for t in range(len(Dec_list)):
@@ -164,54 +168,104 @@ def Table(Dec_list,mode):
             else:
                 Stage.add_row([ones,(Dec_list[t])[:-1],dontcareS(bi,(Dec_list[t])[-1])])
             repeated_ones = ones
+
     if mode == 2:
         for t in range(len(Dec_list)):
             bi = int_to_binary((Dec_list[t])[0])
             if Dec_list[t] == Dec_list[0] and alone_PI:#第一格且是單個數組成的PI
                 for l in range(len(Dec_list[0])):
                     bi = int_to_binary((Dec_list[0])[l])
-                    Prime_Implicants.add_row([(Dec_list[0])[l],dontcareS(bi,-1)])#-1表示都是單個數組成的PI的模式
+                    bi_with_dc = dontcareS(bi,-1)
+                    PI_bins.append(bi_with_dc)
+                    Prime_Implicants.add_row([(Dec_list[0])[l],bi_with_dc])#-1表示都是單個數組成的PI的模式
             else:
-                Prime_Implicants.add_row([(Dec_list[t])[:-1],dontcareS(bi,(Dec_list[t])[-1])])
+                bi_with_dc = dontcareS(bi,(Dec_list[t])[-1])
+                PI_bins.append(bi_with_dc)
+                Prime_Implicants.add_row([(Dec_list[t])[:-1],bi_with_dc])
+
+def chart(mt,decs,bins):
+    global Chart,alone_PI
+    Chart = PrettyTable(" ")
+    Chart.hrules = 1
+    Xpositions = []
+    Nomatch = True
+
+    for pi in range(len(bins)):
+        Chart.add_row([bins[pi]])
+
+    if alone_PI:
+        alones = decs[0]
+        decs.remove(decs[0])
+        for l in range(len(alones)):#將單個得拆成獨立一個在list
+            decs.insert(l,alones[l])
+
+    for l in range(len(decs)):
+        if type(decs[l]) == list:
+            cache = (decs[l])[:-1]
+            decs.remove(decs[l])
+            decs.insert(l,cache)
+
+    for each1 in range(len(mt)):#each1為mt_list中每一項的位置
+        for each2 in range(len(decs)):#each2為clean_PI中每一項的位置
+            Nomatch = True
+            if type(decs[each2]) == int and decs[each2] == mt[each1]:
+                Xpositions.append("X")
+                Nomatch = False
+            if type(decs[each2]) == list:
+                for each3 in range(len(decs[each2])):#each3為clean_PI中每一項list之中的每個位置
+                    if (decs[each2])[each3] == mt[each1]:
+                        Xpositions.append("X")
+                        Nomatch = False
+            if Nomatch:
+                Xpositions.append(" ")
+        Chart.add_column("{}".format(mt[each1]),Xpositions)
+        Xpositions = []
 ################################################################[MAIN]
-mt_list = [int(mt) for mt in input("Please input minterms : ").split()]
+mt_list = [int(mt) for mt in input("Please input minterms and don't cares in order: ").split()]
 Combine = []
 PrimeI = []
 CandP = []#Combine和PrimeI的緩存
 global digits
 global alone_PI 
 alone_PI = False
-digits = finddigit(mt_list)
-sorteddec = ones_sort(mt_list)
-stages = len(sorteddec)
-################################################################[table]
-print("STAGE 0")
-Table(flatten(sorteddec),0)
-print(table)
-################################################################[stages]
-CandP = comb(sorteddec,0)
-Combine = CandP[0]
-PrimeI.append(CandP[1])
-if Combine != []:
-    print("STAGE {}".format(len(sorteddec)-stages+1))
-    # print(Combine)
-    Table(Combine,1)
-    print(Stage)
-else:
-    alone_PI = True
-stages -= 1
-while stages > 0:
-    CandP = comb(Combine,1)
+if mt_list != []:
+    digits = finddigit(mt_list)
+    sorteddec = ones_sort(mt_list)
+    stages = len(sorteddec)
+#################################################################[table]
+    print("STAGE 0")
+    table(flatten(sorteddec),0)
+    print(Table)
+#################################################################[stages]
+    CandP = comb(sorteddec,0)
     Combine = CandP[0]
-    PrimeI.extend(CandP[1])
-    if Combine == []:
-        break
-    print("STAGE {}".format(len(sorteddec)-stages+1))
-    Table(Combine,1)
-    print(Stage)
-    # print(Combine)
+    PrimeI.append(CandP[1])
+    if Combine != []:
+        print("STAGE {}".format(len(sorteddec)-stages+1))
+        # print(Combine)
+        table(Combine,1)
+        print(Stage)
+    else:
+        alone_PI = True
     stages -= 1
-# print("Prime Implicants:\n{}".format(list(filter(None,PrimeI))))#去除空的項並印出
-print("Prime Implicants")
-Table(list(filter(None,PrimeI)),2)
-print(Prime_Implicants)
+    while stages > 0:
+        CandP = comb(Combine,1)
+        Combine = CandP[0]
+        PrimeI.extend(CandP[1])
+        if Combine == []:
+            break
+        print("STAGE {}".format(len(sorteddec)-stages+1))
+        table(Combine,1)
+        print(Stage)
+        # print(Combine)
+        stages -= 1
+    # print("Prime Implicants:\n{}".format(list(filter(None,PrimeI))))#去除空的項並印出
+    print("Prime Implicants")
+    clean_PI = list(filter(None,PrimeI))
+    table(clean_PI,2)
+    print(Prime_Implicants)
+    chart(mt_list,clean_PI,PI_bins)
+    print("Chart")
+    print(Chart)
+else:
+    print("WTF are you doing?")

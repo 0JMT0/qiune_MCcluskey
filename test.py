@@ -34,7 +34,7 @@ def ones_sort(mtlist):
     sort = []
     sorted = []
 
-    for s in range(digits+1): # s代表1的個數
+    for s in range(digits+1): # s代表1的個數(找出1的個數)
         for dec in mtlist: # dec代表minterms的數值
             if count_ones(int_to_binary(dec)) == s:
                 sort.append(dec)
@@ -65,7 +65,7 @@ def comb(sd,mode):#sd->sorted
     comb_yes = []
     global alone_PI
 
-    if mode == 0:
+    if mode == 0:#模式0為最一開始的第一次合併方式
         for ones in range(len(sd)):
             if ones != len(sd)-1:
                 cp1_list = sd[ones]
@@ -84,7 +84,7 @@ def comb(sd,mode):#sd->sorted
         if PI != []:
             alone_PI = True
 
-    if mode == 1:
+    if mode == 1:#模式1為第一次以外的合併方式
         for index1 in range(len(sd)):
             dontcare1 = []
             each1 = sd[index1]#取出每一組
@@ -126,7 +126,7 @@ def dontcareS(binary, bits):
     str1 = " "
     binaryS = [str(i) for i in binary]
 
-    if bits != -1:#表示不是帶有don't care位元
+    if bits != -1:#表示有單個PI的組或都是合併組
         if type(bits) == int:
             binaryS[abs(digits-bits-1)] = '-'
         else:
@@ -134,7 +134,7 @@ def dontcareS(binary, bits):
                 binaryS[abs(digits-bits[dc]-1)] = '-'
         return (str1.join(binaryS))
 
-    if type(bits) == int:
+    if type(bits) == int:#表示只有一個單個的PI
         return (str1.join(binaryS))
 
 def table(Dec_list,mode):
@@ -148,7 +148,7 @@ def table(Dec_list,mode):
     Prime_Implicants.align["Combined(dec)"] = "l"
     repeated_ones = -1
 
-    if mode == 0:
+    if mode == 0:#模式0為最一開始的一個數、數值和二進制表
         for t in range(len(Dec_list)):
             bi = int_to_binary(Dec_list[t])
             o = count_ones(bi)
@@ -158,40 +158,40 @@ def table(Dec_list,mode):
                 Table.add_row([o,Dec_list[t],bi])
             repeated_ones = o
 
-    if mode == 1:
+    if mode == 1:#模式1為Stage的一個數、數值和二進制表
         Stage.clear
         for t in range(len(Dec_list)):
             bi = int_to_binary((Dec_list[t])[0])
             ones = count_ones(bi)
-            if ones == repeated_ones:
+            if ones == repeated_ones:#將數字轉成有don't care符號的二進制
                 Stage.add_row(["",(Dec_list[t])[:-1],dontcareS(bi,(Dec_list[t])[-1])])
             else:
                 Stage.add_row([ones,(Dec_list[t])[:-1],dontcareS(bi,(Dec_list[t])[-1])])
             repeated_ones = ones
 
-    if mode == 2:
+    if mode == 2:#模式2為Prime Implicants的數值和二進制表
         for t in range(len(Dec_list)):
             bi = int_to_binary((Dec_list[t])[0])
             if Dec_list[t] == Dec_list[0] and alone_PI:#第一格且是單個數組成的PI
                 for l in range(len(Dec_list[0])):
                     bi = int_to_binary((Dec_list[0])[l])
-                    bi_with_dc = dontcareS(bi,-1)
+                    bi_with_dc = dontcareS(bi,-1)#將數字轉成二進制(這裡都是純數字不會有don't care)
                     PI_bins.append(bi_with_dc)
                     Prime_Implicants.add_row([(Dec_list[0])[l],bi_with_dc])#-1表示都是單個數組成的PI的模式
             else:
-                bi_with_dc = dontcareS(bi,(Dec_list[t])[-1])
+                bi_with_dc = dontcareS(bi,(Dec_list[t])[-1])#將數字轉成有don't care符號的二進制
                 PI_bins.append(bi_with_dc)
                 Prime_Implicants.add_row([(Dec_list[t])[:-1],bi_with_dc])
 
 def chart(mt,decs,bins):
     global Chart,alone_PI
-    Chart = PrettyTable(" ")
+    Chart = PrettyTable(["P code","binary form"])
     Chart.hrules = 1
     Xpositions = []
     Nomatch = True
 
     for pi in range(len(bins)):
-        Chart.add_row([bins[pi]])
+        Chart.add_row(["P{}".format(pi+1),bins[pi]])
 
     if alone_PI:
         alones = decs[0]
@@ -221,7 +221,7 @@ def chart(mt,decs,bins):
         Chart.add_column("{}".format(mt[each1]),Xpositions)
         Xpositions = []
 ################################################################[MAIN]
-mt_list = [6,9,13,18,19,25,27,29,41,45,57,61]
+mt_list = [0,1,2,5,6,8,9,10,16,33,40,60,100,120,150]
 #[0,5,7,8,16,26,29,30,31]
 #[20,28,38,39,52,60,102,103,127]
 #[6,9,13,18,19,25,27,29,41,45,57,61]
